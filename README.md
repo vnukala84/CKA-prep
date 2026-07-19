@@ -38,7 +38,8 @@ vagrant@master-node:~\$
 DaemonSet (4 pts). Create a DaemonSet node-agent in kube-system running image busybox with command
 sh -c "while true; do sleep 30; done" on every node (tolerate control-plane taints so it also lands on the control plane).
 
-```
+```yaml
+
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
