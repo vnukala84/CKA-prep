@@ -32,3 +32,6 @@ spec:
 
 
 ```
+vagrant@master-node:~$ k scale deploy api --replicas=4
+deployment.apps/api scaled
+vagrant@master-node:~$
