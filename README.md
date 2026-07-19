@@ -29,6 +29,8 @@ spec:
           requests: { cpu: "100m",memory: "128Mi" }
           limits: { cpu: "250m",memory: "256Mi" }
 ```
-vagrant@master-node:~$ k scale deploy api --replicas=4
+```bash
+vagrant@master-node:~\$ k scale deploy api --replicas=4
 deployment.apps/api scaled
-vagrant@master-node:~$
+vagrant@master-node:~\$
+```
