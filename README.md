@@ -1,6 +1,8 @@
 Create deployment api (image nginx , 2 replicas) where each
 container requests 100m CPU / 128Mi memory and is limited to 250m CPU / 256Mi memory. Then scale it to 4 replicas
 
+```yaml
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -27,3 +29,6 @@ spec:
           requests: { cpu: "100m",memory: "128Mi" }
           limits: { cpu: "250m",memory: "256Mi" }
 
+
+
+```
