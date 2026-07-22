@@ -1,0 +1,541 @@
+GitHub README
+Kubernetes Pod Disruptions Explained
+Complete Guide with PodDisruptionBudget (PDB), Eviction API, Node Drain, Production Examples & Hands-on Labs
+
+Learn how Kubernetes keeps applications available during node upgrades, maintenance, autoscaling, and unexpected failures.
+
+Based on the official Kubernetes documentation with additional production examples and hands-on explanations.
+
+Table of Contents
+1. Introduction
+2. What is a Disruption?
+3. Types of Disruptions
+4. Voluntary vs Involuntary Disruptions
+5. Why Pod Disruptions Matter
+6. PodDisruptionBudget (PDB)
+7. How PDB Works
+8. Eviction API
+9. kubectl drain
+10. Production Example
+11. PDB YAML Examples
+12. minAvailable vs maxUnavailable
+13. Stateful Applications
+14. Rolling Updates vs PDB
+15. Node Upgrade Workflow
+16. New DisruptionTarget Condition
+17. Troubleshooting
+18. Best Practices
+19. CKA Exam Tips
+20. Hands-on Labs
+1. What is a Pod Disruption?
+
+A disruption is any event that makes a Pod unavailable.
+
+Examples
+
+Pod Deleted
+Node Reboot
+Cluster Upgrade
+Autoscaler removes node
+Node Failure
+Disk Failure
+Memory Pressure
+
+Not every disruption is bad.
+
+Many disruptions are expected.
+
+Example:
+
+Cluster Upgrade
+
+Node1
+ ┌───────────────┐
+ │ nginx Pod     │
+ └───────────────┘
+
+Administrator
+
+kubectl drain node1
+
+↓
+
+Pod moved to Node2
+
+Application still available
+2. Types of Disruptions
+
+There are two categories.
+
+                 Disruptions
+                      │
+         ┌────────────┴────────────┐
+         │                         │
+ Voluntary                 Involuntary
+Voluntary Disruptions
+
+These are intentional.
+
+Examples
+
+✅ Node Upgrade
+
+kubectl drain worker01
+
+✅ Cluster Autoscaler
+
+Remove unused node
+
+✅ Deployment Update
+
+kubectl rollout restart deployment nginx
+
+✅ Administrator deletes pod
+
+kubectl delete pod nginx
+Involuntary Disruptions
+
+Unexpected.
+
+Examples
+
+❌ Node crashes
+
+Power Failure
+
+❌ Disk Failure
+
+❌ Kernel Panic
+
+❌ Network Partition
+
+❌ Node OOM
+
+❌ Cloud VM disappears
+
+These cannot be prevented by PDBs, although they still count against the disruption budget.
+
+3. Why Pod Disruptions Matter
+
+Suppose your application has
+
+Replicas = 3
+Node1     Node2     Node3
+
+PodA      PodB      PodC
+
+If administrator upgrades Node1
+
+Without PDB
+
+Node1 drained
+
+PodA deleted
+
+Available Pods = 2
+
+Now immediately drain Node2
+
+PodB deleted
+
+Only PodC left
+
+Application overloaded
+
+This can cause downtime.
+
+4. PodDisruptionBudget (PDB)
+
+PDB tells Kubernetes
+
+Never allow more than X Pods to be unavailable during voluntary disruptions.
+
+Think of it as
+
+Application says
+
+"I need at least 2 Pods alive."
+
+Kubernetes obeys.
+
+5. How PDB Works
+
+Suppose
+
+Deployment
+
+Replicas = 5
+
+PDB
+
+minAvailable = 4
+
+Current Pods
+
+Pod1 Ready
+
+Pod2 Ready
+
+Pod3 Ready
+
+Pod4 Ready
+
+Pod5 Ready
+
+Drain node
+
+↓
+
+One Pod removed
+
+Ready Pods = 4
+
+Allowed
+
+Try removing another
+
+Ready Pods = 3
+
+Blocked
+
+Drain waits
+
+Exactly how the Eviction API behaves when respecting the PDB.
+
+6. Example Architecture
+          Load Balancer
+                │
+      ┌─────────┴─────────┐
+      │                   │
+
+Node1             Node2             Node3
+
+Pod1              Pod2              Pod3
+
+PDB
+
+minAvailable = 2
+
+Upgrade Node1
+
+Pod1 Evicted
+
+Remaining
+
+Pod2
+
+Pod3
+
+Still Available
+
+Upgrade Node2 immediately
+
+Rejected
+
+Need minimum 2 Pods
+7. PDB YAML
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: nginx-pdb
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: nginx
+
+Deployment
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+
+  template:
+    metadata:
+      labels:
+        app: nginx
+
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+8. maxUnavailable Example
+
+Instead of
+
+minAvailable
+
+You can use
+
+spec:
+  maxUnavailable: 1
+
+Meaning
+
+Only ONE pod can disappear
+
+Example
+
+Replicas
+
+10
+
+PDB
+
+maxUnavailable=2
+
+Allowed
+
+8 Running
+
+2 Evicted
+
+Not allowed
+
+7 Running
+
+3 Evicted
+9. minAvailable vs maxUnavailable
+minAvailable	maxUnavailable
+Minimum Pods that must stay alive	Maximum Pods allowed to go down
+Easier for quorum-based apps	Easier for stateless apps
+Example: etcd	Example: Nginx
+10. kubectl drain
+
+When running
+
+kubectl drain worker01 --ignore-daemonsets
+
+Workflow
+
+Drain
+
+↓
+
+Eviction API
+
+↓
+
+Checks PDB
+
+↓
+
+Allowed?
+
+YES
+
+↓
+
+Evict Pod
+
+NO
+
+↓
+
+Wait
+11. Eviction API
+
+Never delete Pods directly.
+
+Use
+
+Eviction API
+
+because it
+
+✔ Checks PDB
+
+✔ Gracefully terminates Pods
+
+✔ Respects terminationGracePeriodSeconds
+
+Cluster tools such as kubectl drain use the Eviction API rather than deleting Pods directly.
+
+12. Rolling Updates vs PDB
+
+Many beginners think
+
+Rolling Update
+↓
+
+PDB
+
+Wrong.
+
+Deployment rolling updates are governed by the Deployment strategy (maxSurge, maxUnavailable), not blocked by the PDB. PDB mainly protects against voluntary disruptions such as node drains.
+
+13. Stateful Applications
+
+Example
+
+etcd
+
+ZooKeeper
+
+Kafka
+
+Need quorum.
+
+Suppose
+
+3 Members
+
+Need
+
+2 alive
+
+PDB
+
+minAvailable: 2
+
+Perfect.
+
+14. Production Example
+
+Deployment
+
+Replicas = 6
+
+PDB
+
+minAvailable=5
+
+Upgrade
+
+Node1
+
+↓
+
+1 Pod removed
+
+↓
+
+Replacement created
+
+↓
+
+Wait until Ready
+
+↓
+
+Upgrade Node2
+
+Zero downtime.
+
+15. New DisruptionTarget Pod Condition
+
+Modern Kubernetes adds
+
+DisruptionTarget
+
+It indicates that a Pod is about to be terminated due to a disruption, with reasons such as:
+
+EvictionByEvictionAPI
+PreemptionByScheduler
+DeletionByTaintManager
+TerminationByKubelet
+DeletionByPodGC
+
+This condition helps with observability and advanced workload behavior.
+
+16. Common Commands
+kubectl get pdb
+
+kubectl describe pdb nginx-pdb
+
+kubectl drain worker01 --ignore-daemonsets
+
+kubectl uncordon worker01
+
+kubectl get evictions
+
+kubectl get pods -o wide
+17. Troubleshooting
+Drain hangs forever
+
+Check
+
+kubectl describe pdb
+
+Too few replicas
+
+Increase replicas
+
+replicas: 5
+
+PDB too strict
+
+Instead of
+
+minAvailable=5
+
+Use
+
+minAvailable=4
+
+Pending replacement Pods
+
+kubectl get pods
+
+kubectl describe pod
+
+Look for
+
+Insufficient CPU
+
+Insufficient Memory
+18. Best Practices
+
+✅ Always create a PDB for production workloads.
+
+✅ Use kubectl drain, not kubectl delete pod.
+
+✅ Use at least 3 replicas for HA applications.
+
+✅ Combine PDB with anti-affinity and topology spread constraints.
+
+✅ Test node maintenance in a staging cluster before production.
+
+19. CKA Exam Tips
+
+Remember:
+
+PDB protects only voluntary disruptions.
+Deleting a Pod or Deployment directly bypasses the PDB.
+kubectl drain respects the PDB through the Eviction API.
+minAvailable and maxUnavailable are mutually exclusive in a PDB.
+PDBs are commonly tested with Deployments and StatefulSets.
+20. Hands-on Labs
+Lab 1
+
+Create a Deployment with 3 replicas.
+
+Lab 2
+
+Create a PDB using minAvailable.
+
+Lab 3
+
+Drain a worker node.
+
+Lab 4
+
+Observe blocked evictions.
+
+Lab 5
+
+Use maxUnavailable.
+
+Lab 6
+
+Test StatefulSet with PDB.
+
+Lab 7
+
+Simulate node maintenance and verify application availability.
