@@ -569,12 +569,15 @@ Checklist:
 1. **Is there a binding at all?** A Role with no binding does nothing.
    `kubectl get rolebinding -n <ns> -o wide`
 2. **Right namespace?** For a RoleBinding, the binding's *own* namespace determines scope — not the Role's, not the subject's.
-3. **API group correct?** Deployments are in `apps`, not `""`. Pods, Services, ConfigMaps, Secrets are in `""`.
-4. **Subject spelled and typed correctly?** Names are case sensitive; `ServiceAccount` subjects need `namespace`, `User`/`Group` need `apiGroup`.
-5. **Missing subresource?** `kubectl logs` needs `pods/log`, `kubectl exec` needs `pods/exec`, `kubectl scale` needs `deployments/scale`.
-6. **Missing verb?** `kubectl get pods` needs `list`, not just `get`. `kubectl apply` typically needs `get`, `patch`, and `create`.
-7. **Cluster-scoped resource bound with a RoleBinding?** Nodes and PVs need a ClusterRoleBinding.
-8. **Escalation blocked?** If *your own* create of a Role fails, you're likely trying to grant permissions you don't hold.
+
+   <img width="1024" height="1536" alt="RBAC" src="https://github.com/user-attachments/assets/a99e7b1c-6e0b-4f10-9978-b1ff504d1546" />
+
+4. **API group correct?** Deployments are in `apps`, not `""`. Pods, Services, ConfigMaps, Secrets are in `""`.
+5. **Subject spelled and typed correctly?** Names are case sensitive; `ServiceAccount` subjects need `namespace`, `User`/`Group` need `apiGroup`.
+6. **Missing subresource?** `kubectl logs` needs `pods/log`, `kubectl exec` needs `pods/exec`, `kubectl scale` needs `deployments/scale`.
+7. **Missing verb?** `kubectl get pods` needs `list`, not just `get`. `kubectl apply` typically needs `get`, `patch`, and `create`.
+8. **Cluster-scoped resource bound with a RoleBinding?** Nodes and PVs need a ClusterRoleBinding.
+9. **Escalation blocked?** If *your own* create of a Role fails, you're likely trying to grant permissions you don't hold.
 
 Then confirm the fix:
 
