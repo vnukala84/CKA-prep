@@ -570,7 +570,6 @@ Checklist:
    `kubectl get rolebinding -n <ns> -o wide`
 2. **Right namespace?** For a RoleBinding, the binding's *own* namespace determines scope — not the Role's, not the subject's.
 
-   <img width="1024" height="1536" alt="RBAC" src="https://github.com/user-attachments/assets/a99e7b1c-6e0b-4f10-9978-b1ff504d1546" />
 
 4. **API group correct?** Deployments are in `apps`, not `""`. Pods, Services, ConfigMaps, Secrets are in `""`.
 5. **Subject spelled and typed correctly?** Names are case sensitive; `ServiceAccount` subjects need `namespace`, `User`/`Group` need `apiGroup`.
@@ -610,3 +609,7 @@ Audit logs are the last resort — set `--audit-policy-file` on the API server a
 - [Controlling Access to the Kubernetes API](https://kubernetes.io/docs/concepts/security/controlling-access/)
 - [Authorization Overview](https://kubernetes.io/docs/reference/access-authn-authz/authorization/)
 - [ServiceAccounts](https://kubernetes.io/docs/concepts/security/service-accounts/)
+  ###
+
+  
+   <img width="1024" height="1536" alt="RBAC" src="https://github.com/user-attachments/assets/a99e7b1c-6e0b-4f10-9978-b1ff504d1546" />
