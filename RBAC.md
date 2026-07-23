@@ -613,3 +613,5 @@ Audit logs are the last resort — set `--audit-policy-file` on the API server a
 
   
    <img width="1024" height="1536" alt="RBAC" src="https://github.com/user-attachments/assets/a99e7b1c-6e0b-4f10-9978-b1ff504d1546" />
+
+<img width="1536" height="1024" alt="RBAC2 2" src="https://github.com/user-attachments/assets/a2d86c69-f7a7-49db-bac6-a0a2f453e04b" />
